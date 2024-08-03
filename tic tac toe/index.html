@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Tic Tac Toe</title>
+  <style>
+    body {
+      background-image: url('img6.avif.jpg');
+      background-size: cover;
+      background-position: center;
+      font-family: Arial, sans-serif;
+      display: flex; 
+      justify-content: center; 
+      align-items: center;
+      min-height: 100vh; 
+      flex-direction: column; 
+    }
+    h1 {
+      color: #fff; 
+      font-size: 36px;
+      margin-bottom: 20px;
+    }
+    #game-board {
+      display: grid;
+      grid-template-columns: repeat(3, 100px);
+      grid-template-rows: repeat(3, 100px);
+      gap: 10px;
+      border: 2px solid #fff;
+      border-radius: 5px;
+      background-color: #333; 
+      padding: 10px;
+    }
+   .cell {
+      width: 100px;
+      height: 100px;
+      border: 1px solid #fff;
+      border-radius: 5px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 48px;
+      cursor: pointer;
+    }
+   .cell:hover {
+      background-color: #444; 
+    }
+   .x {
+      color: #f00; 
+    }
+   .o {
+      color: #0f0; 
+    }
+    #result {
+      color: #f00; 
+      font-size: 24px;
+      margin-top: 20px;
+      text-align: center;
+    }
+    #play-again {
+      background-color: #d14e4e; 
+      color: rgb(255, 255, 255); 
+      border: none;
+      padding: 10px 20px;
+      font-size: 18px;
+      cursor: pointer;
+    }
+    #play-again:hover {
+      background-color: #3b3a3d; 
+    }
+    #ai-button {
+      background-color: #4CAF50; 
+      color: rgb(255, 255, 255); 
+      border: none;
+      padding: 10px 20px;
+      font-size: 18px;
+      cursor: pointer;
+      margin-bottom: 20px; 
+    }
+    #ai-button:hover {
+      background-color: #3e8e41; 
+    }
+  </style>
+</head>
+<body>
+  <h1>Tic Tac Toe</h1>
+  <button id="ai-button">Play against AI</button>
+  <div id="game-board"></div>
+  <div id="result"></div>
+  <button id="play-again">Play Again</button>
+
+  <script>
+    const board = [
+      null, null, null,
+      null, null, null,
+      null, null, null
+    ];
+
+    let currentPlayer = 'x';
+    let gameActive = true;
+    let aiPlaying = false;
+
+    const gameBoard = document.getElementById('game-board');
+    for (let i = 0; i < 9; i++) {
+      const cell = document.createElement('div');
+      cell.classList.add('cell');
+      cell.addEventListener('click', (function(index) {
+        return function() {
+          handleClick(index);
+        };
+      })(i));
+      gameBoard.appendChild(cell);
+    }
+
+    const resultDiv = document.getElementById('result');
+    const playAgainButton = document.getElementById('play-again');
+    const aiButton = document.getElementById('ai-button');
+
+    playAgainButton.addEventListener('click', resetGame);
+    aiButton.addEventListener('click', playAgainstAI);
+
+    function handleClick(index) {
+      if (gameActive && board[index] === null) {
+        board[index] = currentPlayer;
+        updateBoard();
+        if (checkWin()) {
+          gameActive = false;
+          resultDiv.textContent = `PLAYER ${currentPlayer} WINS`;
+        } else if (checkDraw()) {
+          gameActive = false;
+          resultDiv.textContent = `It's a draw`;
+        } else {
+          switchPlayer();
+          if (aiPlaying) {
+            aiMove();
+          }
+        }
+      }
+    }
+
+    function updateBoard() {
+      const cells = gameBoard.querySelectorAll('.cell');
+      for (let i = 0; i < 9; i++) {
+        cells[i].textContent = board[i];
+        if (board[i] === 'x') {
+          cells[i].classList.add('x');
+        } else if (board[i] === 'o') {
+          cells[i].classList.add('o');
+        }
+      }
+    }
+
+    function switchPlayer() {
+      currentPlayer = currentPlayer === 'x'? 'o' : 'x';
+    }
+
+    function checkWin() {
+      const winConditions = [
+        [0, 1, 2],
+[3, 4, 5],
+        [6, 7, 8],
+        [0, 3, 6],
+        [1, 4, 7],
+        [2, 5, 8],
+        [0, 4, 8],
+        [2, 4, 6]
+      ];
+
+      for (const condition of winConditions) {
+        if (board[condition[0]]!== null &&
+            board[condition[0]] === board[condition[1]] &&
+            board[condition[0]] === board[condition[2]]) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    function checkDraw() {
+      return board.every(cell => cell!== null);
+    }
+
+    function resetGame() {
+      board.fill(null);
+      currentPlayer = 'x';
+      gameActive = true;
+      aiPlaying = false;
+      resultDiv.textContent = '';
+      updateBoard();
+    }
+
+    function playAgainstAI() {
+      aiPlaying = true;
+      currentPlayer = 'x';
+      gameActive = true;
+      resultDiv.textContent = '';
+      updateBoard();
+    }
+
+    function aiMove() {
+      let bestMove = -1;
+      let bestScore = -Infinity;
+
+      for (let i = 0; i < 9; i++) {
+        if (board[i] === null) {
+          board[i] = 'o';
+          let score = minimax(board, 0, false);
+          board[i] = null;
+          if (score > bestScore) {
+            bestScore = score;
+            bestMove = i;
+          }
+        }
+      }
+
+      board[bestMove] = 'o';
+      updateBoard();
+      if (checkWin()) {
+        gameActive = false;
+        resultDiv.textContent = `AI WINS`;
+      } else if (checkDraw()) {
+        gameActive = false;
+        resultDiv.textContent = `It's a draw`;
+      } else {
+        switchPlayer();
+      }
+    }
+
+    function minimax(board, depth, isMaximizing) {
+      if (checkWin()) {
+        return isMaximizing? -10 : 10;
+      } else if (checkDraw()) {
+        return 0;
+      }
+
+      if (isMaximizing) {
+        let bestScore = -Infinity;
+        for (let i = 0; i < 9; i++) {
+          if (board[i] === null) {
+            board[i] = 'o';
+            let score = minimax(board, depth + 1, false);
+            board[i] = null;
+            bestScore = Math.max(score, bestScore);
+          }
+        }
+        return bestScore;
+      } else {
+        let bestScore = Infinity;
+        for (let i = 0; i < 9; i++) {
+          if (board[i] === null) {
+            board[i] = 'x';
+            let score = minimax(board, depth + 1, true);
+            board[i] = null;
+            bestScore = Math.min(score, bestScore);
+          }
+        }
+        return bestScore;
+      }
+    }
+  </script>
+</body>
+</html>
+
